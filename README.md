@@ -4,9 +4,12 @@ Modified version of [this repo](https://gitlab.com/ungetym/Multi_Camera_Calibrat
 
 TODOs:
 
-Add support for flirmulticamera
-(video record settings)
+Add scripts
 
-Add cpp_utils settings loading
+1.
+- recording with video settings
+- frame chunking
 
-Add Auto saving
+2.
+- calibration (settings) (export to workspace robot calib)
+- test with reprojection

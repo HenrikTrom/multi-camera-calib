@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <opencv2/opencv.hpp>
 #include <opencv2/aruco.hpp>
-#include <cpp_utils/utils.h>
+
 
 using namespace std;
 using namespace cv;
@@ -14,45 +14,6 @@ namespace Calibration{
 const int DELIM_UNDERSCORE = 0;
 const int DELIM_MINUS = 1;
 const int DELIM_BOTH = 2;
-
-bool loadParameters(const string& file_path, vector<Parameter>* parameters){
-
-    ifstream file(file_path);
-    if(file.is_open()){
-        for(Parameter& param : *parameters){
-            switch (param.type) {
-            case VAR_INT:
-                file >> *(int*)param.pointer;
-                break;
-            case VAR_FLOAT:
-                file >> *(float*)param.pointer;
-                break;
-            case VAR_DOUBLE:
-                file >> *(double*)param.pointer;
-                break;
-            case VAR_STRING:
-                file >> *(string*)param.pointer;
-                break;
-            default:
-                break;
-            }
-        }
-
-        file.close();
-    }
-
-    return true;
-};
-
-
-void loadPattern(Data* data_){
-    std::string file_path = "/home/docker/workspace/workspace/multi-camera-calib/data/pattern/board_pattern.MCC_Patt";
-
-    //load config
-    if(!loadParameters(file_path, &data_->meta_calib_param_list)){
-        spdlog::error("Could not load parameters");
-    }
-};
 
 bool splitString(const string& str, vector<string>* parts, const int delim_code){
     if(str.size() == 0 || parts == nullptr){
@@ -177,13 +138,38 @@ bool createImageList(const string& dir_path, const map<int,pairf>& rig_positions
         return false;
     }
 
-    //get list of image files and wirte list to imagelist.xml
-
+    // get number of frames and fill with values according to hardware constants
     std::vector<std::string> file_list;
+    int count = 0;
     for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
         if (entry.is_regular_file() && entry.path().extension() == ".png") {
-            file_list.push_back(entry.path().stem().string());
-            spdlog::info("Found {}", entry.path().string());
+            count += 1;
+        }
+    }
+    std::size_t n_frames = count/5;
+    // first entry is reference-frame camera -> use top cam 
+    std::vector<std::string> sns{
+        std::string(GLOBAL_CONST_TOP_CAM_SERIAL)
+    };
+    for (auto sn : GLOBAL_CONST_CAMERA_SERIAL_NUMBERS)
+    {
+        if (sn != GLOBAL_CONST_TOP_CAM_SERIAL)
+        sns.push_back(std::string(sn));
+    }
+    for (auto sn : sns)
+    {
+        for (std::size_t fidx = 1; fidx<=n_frames; fidx++){
+            std::string fname = "cam" + sn + "-";
+            if (fidx<10){
+                fname += "000"+std::to_string(fidx);
+            }
+            else if (fidx<100){
+                fname += "00"+std::to_string(fidx);
+            }
+            else if (fidx<1000){
+                fname += "0"+std::to_string(fidx);
+            }
+            file_list.push_back(fname);
         }
     }
 
@@ -204,7 +190,6 @@ bool createImageList(const string& dir_path, const map<int,pairf>& rig_positions
             spdlog::warn("File name could not be analyzed correctly: {}", file_name);
             continue;
         }
-
         //calculate image idx
         vector<int> image_idx;
         int cam_idx = -1;
@@ -308,7 +293,8 @@ bool createImageList(const string& dir_path, const map<int,pairf>& rig_positions
 }
 
 
-bool convertFeaturelistsToMat(Detection* detection){
+bool convertFeaturelistsToMat(Detection* detection)
+{
     detection->object_points.clear();
     detection->image_points.clear();
 
@@ -350,7 +336,8 @@ bool convertFeaturelistsToMat(Detection* detection){
 }
 
 
-bool detectChArUcoPatterns(const int width, const int height, const ChArUco_Params& charuco_params, const Files& files, Detection* detection){
+bool detectChArUcoPatterns(const int width, const int height, const ChArUco_Params& charuco_params, const Files& files, Detection* detection)
+{
     if(detection == nullptr){
         spdlog::error("No list given to save detected points in.");
         return false;
@@ -404,8 +391,6 @@ bool detectChArUcoPatterns(const int width, const int height, const ChArUco_Para
                             cv::log(image,image);
                             image = 255.0*image/std::log(65536.0);
                             image.convertTo(image,CV_8UC1);
-//                            cv::imshow("IR image2", image);
-//                            cv::waitKey(0);
                         }
                     }
                     else{
@@ -486,10 +471,6 @@ bool detectChArUcoPatterns(const int width, const int height, const ChArUco_Para
                                 }
                                 else{
                                     spdlog::warn("Pattern in image {}_{} was rejected - not a grid.", cam_idx, pat_idx);
-//                                    aruco::drawDetectedCornersCharuco(image,corners,ids,Scalar(0,0,255));
-//                                    aruco::drawDetectedMarkers(image,marker_corners,marker_ids,Scalar(0,255,0));
-//                                    cv::imshow("Test",image);
-//                                    cv::waitKey(0);
                                 }
                             }
                             else{
@@ -511,7 +492,6 @@ bool detectChArUcoPatterns(const int width, const int height, const ChArUco_Para
 
     return convertFeaturelistsToMat(detection);
 }
-
 
 void singleIntrinsicsEstimation(
     const Detection& detection, Estimation* estimation, const bool& use_initial_intrinsics, 
@@ -607,7 +587,8 @@ void singleIntrinsicsEstimation(
 }
 
 
-bool intrinsicsEstimation(const Detection& detection, Estimation* estimation, const int& initial_intrinsics_mode){
+bool intrinsicsEstimation(const Detection& detection, Estimation* estimation, const int& initial_intrinsics_mode)
+{
     if(estimation->cams.size() != (size_t) detection.num_cams){
         spdlog::warn("Not all cameras have detected patterns available. Thus not all intrinsics can be calculated.");
     }
@@ -635,10 +616,10 @@ bool intrinsicsEstimation(const Detection& detection, Estimation* estimation, co
         int cam_idx_est = estimation->cam_id_to_idx_map[detection.detected_cam_ids[cam_idx]];
         spdlog::info("Camera {} rms: {}", cam_idx_est, rmss[cam_idx]);
         std::ostringstream Koss, Doss;
-        Koss << estimation->cams[cam_idx_est].K;
-        Koss << estimation->cams[cam_idx_est].getDistortion();
-        spdlog::info("K matrix:\n{}", Koss.str());
-        spdlog::info("Distortion:\n{}", Doss.str());
+        // Koss << estimation->cams[cam_idx_est].K;
+        // Koss << estimation->cams[cam_idx_est].getDistortion();
+        // spdlog::info("K matrix:\n{}", Koss.str());
+        // spdlog::info("Distortion:\n{}", Doss.str());
     }
 
     // estimation->updateCameras();
@@ -647,9 +628,8 @@ bool intrinsicsEstimation(const Detection& detection, Estimation* estimation, co
 }
 
 
-void detectPatterns(Data* data_){
-
-    data_->input_dir = "/home/docker/workspace/workspace/multi-camera-calib/data/frames";
+void detectPatterns(Data* data_)
+{
     //check if image input dir is set
     if(data_->input_dir.size() == 0){
         spdlog::error("Input image dir not set.");
@@ -663,12 +643,14 @@ void detectPatterns(Data* data_){
     data_->detection.rig_positions.push_back(pairf(0.0,0.0));
 
     //create image list and initial cameras
-    std::vector<Camera> cameras;
+    std::vector<Camera> cameras;   
     if(!createImageList(data_->input_dir, rig_positions, &data_->files, &data_->detection, &cameras)){
         spdlog::error("Image list creation failed.");
         return;
     }
     data_->estimation.setCameras(cameras ,SET_CAMERA_ALL, false);
+
+    // switch images
 
     //detect pattern
     if(data_->pattern_type == CALIB_PATTERN_CHARUCO){
@@ -682,7 +664,8 @@ void detectPatterns(Data* data_){
 }
 
 
-bool calculateIntrinsics(Data *data_){
+bool calculateIntrinsics(Data *data_)
+{
     spdlog::info("Start intrinsics estimation. Please wait..");
     data_->estimation.clearGeometry();
 
@@ -723,7 +706,11 @@ bool calculateIntrinsics(Data *data_){
 // --------------------------------------------
 
 
-bool calculateJacobian(const Detection& detection, const Estimation& estimation, const Mat& extrinsics, const Mat& intrinsics, const Optimization_Params& opt_params, const Mat& rig, const Graph& graph, Mat* jacobian, Mat* error){
+bool calculateJacobian(
+    const Detection& detection, const Estimation& estimation, const Mat& extrinsics, 
+    const Mat& intrinsics, const Optimization_Params& opt_params, const Mat& rig, 
+    const Graph& graph, Mat* jacobian, Mat* error
+){
     bool refine_rig = !(rig.rows == 0);
     int num_params = (int)(extrinsics.total() + intrinsics.total() + rig.total());
     int num_edges = (int)graph.edges.size();
@@ -994,7 +981,10 @@ bool calculateJacobian(const Detection& detection, const Estimation& estimation,
     return true;
 }
 
-bool optimizeExtrinsicsLM(const Detection& detection, Estimation* estimation, Graph* graph, double* error, const Calibration::LM_Params& params, const Optimization_Params& opt_params){
+bool optimizeExtrinsicsLM(
+    const Detection& detection, Estimation* estimation, Graph* graph, double* error, 
+    const Calibration::LM_Params& params, const Optimization_Params& opt_params
+){
     //prepare initial solution for LM optimization
     int num_cams_to_optimize = 0;
     estimation->calc_extrinsics_idx_list.clear();
@@ -1288,7 +1278,9 @@ bool optimizeExtrinsicsLM(const Detection& detection, Estimation* estimation, Gr
 };
 
 
-bool buildGraph(const Detection& detection, Estimation* estimation, const int& initial_extrinsics_mode, Graph* graph){
+bool buildGraph(
+    const Detection& detection, Estimation* estimation, const int& initial_extrinsics_mode, Graph* graph
+){
 
     if(graph ==  nullptr){
         spdlog::error("Invalid parameters for graph building.");
@@ -1547,7 +1539,10 @@ bool buildGraph(const Detection& detection, Estimation* estimation, const int& i
 };
 
 
-bool optimizeExtrinsics(const Detection& detection, Estimation* estimation, const LM_Params& params, const Optimization_Params& opt_params){
+bool optimizeExtrinsics(
+    const Detection& detection, Estimation* estimation, const LM_Params& params, 
+    const Optimization_Params& opt_params
+){
     //build graph
     spdlog::info("Building graph..");
     Graph graph;
@@ -1557,12 +1552,12 @@ bool optimizeExtrinsics(const Detection& detection, Estimation* estimation, cons
         return false;
     }
 
-    spdlog::info("Initial camera poses:");
-    for(size_t i = 0; i < estimation->cams.size(); i++){
-        std::ostringstream oss;
-        oss << estimation->cams[i].pose;
-        spdlog::info("Camera {}: {}", i ,oss.str());
-    }
+    // spdlog::info("Initial camera poses:");
+    // for(size_t i = 0; i < estimation->cams.size(); i++){
+    //     std::ostringstream oss;
+    //     oss << estimation->cams[i].pose;
+    //     spdlog::info("Camera {}: {}", i ,oss.str());
+    // }
 
     //optimize extrinsics
     spdlog::info("Start extrinsics optimization..");
@@ -1572,13 +1567,84 @@ bool optimizeExtrinsics(const Detection& detection, Estimation* estimation, cons
         return false;
     }
 
-    spdlog::info("Final camera poses:");
-    for(size_t i = 0; i < estimation->cams.size(); i++){
-        std::ostringstream oss;
-        oss << estimation->cams[i].pose;
-        spdlog::info("Camera {}: {}", i ,oss.str());
-    }
+    // spdlog::info("Final camera poses:");
+    // for(size_t i = 0; i < estimation->cams.size(); i++){
+    //     std::ostringstream oss;
+    //     oss << estimation->cams[i].pose;
+    //     spdlog::info("Camera {}: {}", i ,oss.str());
+    // }
     spdlog::info("Optimization finished with an error of {}", error);
+    return true;
+};
+
+bool save_cameras(
+    std::string filename, Estimation* estimation
+){
+    Document doc;
+    doc.SetObject();
+
+    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+    std::string ts = cpp_utils::get_timestamp();  // ts must stay in scope
+    rapidjson::Value timestamp_val;
+    timestamp_val.SetString(ts.c_str(), static_cast<rapidjson::SizeType>(ts.length()), allocator);
+    doc.AddMember("timestamp", timestamp_val, allocator);
+
+    Value cameras(kArrayType);
+    for (size_t i = 0; i < estimation->cams.size(); i++) {
+        Value camera(kObjectType);
+        std::string sn = estimation->cams[i].id;
+        sn.erase(std::remove_if(sn.begin(), sn.end(),
+                        [](char c) { return !std::isdigit(c); }),
+        sn.end());
+        camera.AddMember("SerialNumber", Value(sn.c_str(), allocator), allocator);
+        camera.AddMember("ID", i, allocator);
+        // Distortion
+        Value distortionArray(kArrayType);
+        distortionArray.PushBack(estimation->cams[i].distortion.k_1, doc.GetAllocator());
+        distortionArray.PushBack(estimation->cams[i].distortion.k_2, doc.GetAllocator());
+        distortionArray.PushBack(estimation->cams[i].distortion.p_1, doc.GetAllocator());
+        distortionArray.PushBack(estimation->cams[i].distortion.p_2, doc.GetAllocator());
+        distortionArray.PushBack(estimation->cams[i].distortion.k_3, doc.GetAllocator());
+        camera.AddMember("Distortion", distortionArray, allocator);
+        // Intrinsic
+        Value intrArray(kArrayType);
+        for (std::size_t row = 0; row < estimation->cams[i].K.rows; row++) {
+        for (std::size_t col = 0; col < estimation->cams[i].K.cols; col++) {
+                intrArray.PushBack(
+                    estimation->cams[i].K.at<double>(row,col), doc.GetAllocator());
+            }
+        }
+        camera.AddMember("Intrinsic", intrArray, allocator);
+        // Extrinsic
+        Value extrArray(kArrayType);
+        for (std::size_t row = 0; row < estimation->cams[i].pose.rows; row++) {
+        for (std::size_t col = 0; col < estimation->cams[i].pose.cols; col++) {
+                extrArray.PushBack(
+                    estimation->cams[i].pose.at<double>(row,col), doc.GetAllocator());
+            }
+        }
+        camera.AddMember("Extrinsic", extrArray, allocator);
+        cameras.PushBack(camera, allocator);
+        // Distortion
+    }
+    doc.AddMember("CAMERAS", cameras, allocator);
+
+    // save json
+    spdlog::info("Saving {}", filename);
+    std::ofstream ofs(filename);
+    if (!ofs.is_open()) {
+        std::string error_msg = "Unable to open file: "+filename;
+        spdlog::error(error_msg);
+        throw std::runtime_error(error_msg);
+        return false;
+    }
+    rapidjson::StringBuffer buffer;
+    rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
+    writer.SetIndent(' ', 4);
+    doc.Accept(writer);
+    ofs << buffer.GetString();
+    ofs.close();
+
     return true;
 };
 
@@ -1590,8 +1656,13 @@ void calibrate(Data *data_){
         spdlog::error("Optimization of extrinsic parameters not successful.");
         return;
     }
-    // TODO: save directly in the right format 
-    // saveCameras();
+    std::string extension = std::to_string(data_->estimation.cams.at(0).resolution_x) + "x" +
+        std::to_string(data_->estimation.cams.at(0).resolution_y) + ".json";
+    
+    save_cameras(
+        data_->savedir + "/Calibration" + extension,
+        &data_->estimation
+    );
 }
 
 }

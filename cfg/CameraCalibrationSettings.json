@@ -1,0 +1,12 @@
+{
+    "pattern_type": 0,
+    "pattern_size_first": 11,
+    "pattern_size_second": 7,
+    "charuco_params_border_size": 1.0,
+    "charuco_params_dict": 0,
+    "charuco_params_marker_border_pixel": 1,
+    "charuco_params_marker_to_square_ratio": 0.750000,
+    "charuco_params_square_size": 80.000000,
+    "input_dir": "/home/docker/workspace/workspace/multi-camera-calib/data/frames",
+    "savedir": "/home/docker/workspace/workspace/multi-camera-calib/data/results"
+}

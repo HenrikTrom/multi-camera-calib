@@ -6,6 +6,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/aruco.hpp>
+#include "config_parser.hpp"
 
 namespace Calibration{
 
@@ -315,7 +316,10 @@ public:
         clearGeometry();
     }
 
-    void setCameras(const std::vector<Camera>& cameras, const int& set_mode = SET_CAMERA_ALL, const bool& overwrite = true){
+    void setCameras(
+        const std::vector<Camera>& cameras, const int& set_mode = SET_CAMERA_ALL, 
+        const bool& overwrite = true
+    ){
         for(const Camera& new_cam : cameras){
             bool found = false;
             for(Camera& cam : cams){
@@ -375,8 +379,6 @@ public:
                 transforms.push_back(vector_2D<cv::Mat>(num_pattern,std::vector<cv::Mat>(num_rig,cv::Mat(0,0,CV_64F))));
             }
         }
-
-        // emit updateCameras();
     }
 
     int addCamera(const Camera& camera, const int& set_mode = SET_CAMERA_ALL, const bool& overwrite = true){
@@ -523,8 +525,8 @@ public:
     /// \brief Calibration_Data is the standard constructor
     /// \param parent
     ///
-    Data();
-
+    Data(config_camera_calibration &cfg);
+    std::string savedir;
     /////////////////////////   calibration pattern parameters   ///////////////////////////
 
     /// saves current pattern type - currently supported are charuco and random patterns
@@ -535,9 +537,6 @@ public:
     cv::Mat pattern_image;
     ///charuco specific parameters
     ChArUco_Params charuco_params;
-
-    ///METADATA: List of the above parameters excluding pattern_image
-    std::vector<Parameter> meta_calib_param_list;
 
     ///////////////////////////////   optimization data   //////////////////////////////////
 
@@ -559,7 +558,7 @@ public:
     ///
     Optimization_Params opt_params;
 
-    bool setParameter(std::string value, int param_code);
+    // bool setParameter(std::string value, int param_code);
     ///
     /// \brief patternWidth is a getter for the calibration pattern width
     /// \return calibration pattern width
