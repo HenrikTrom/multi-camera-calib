@@ -2,14 +2,13 @@
 
 using namespace Calibration;
 
-int main(){
+int main(int argc, char* argv){
 
-    // loadPattern(&data_);
-    std::string filepath = "/home/docker/workspace/workspace/multi-camera-calib/cfg/CameraCalibrationSettings.json";
+    std::string filepath = std::string(CONFIG_DIR)+"/CameraCalibrationSettings.json";
     config_camera_calibration cfg;
+    cfg.input_dir = std::string(CONFIG_DIR)+"/../data/images";
     load_config_camera_calibration(filepath, cfg);
     Data data_(cfg);
-    // calculateIntrinsics(&data_);
     calibrate(&data_);
 
     

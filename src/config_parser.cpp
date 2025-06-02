@@ -11,7 +11,6 @@ bool load_config_camera_calibration(std::string &filepath, config_camera_calibra
         return false;
     }
 
-    cfg.pattern_type = doc["pattern_type"].GetInt();
     cfg.pattern_size_first = doc["pattern_size_first"].GetInt();
     cfg.pattern_size_second = doc["pattern_size_second"].GetInt();
     cfg.charuco_params_border_size = doc["charuco_params_border_size"].GetFloat();
@@ -19,7 +18,6 @@ bool load_config_camera_calibration(std::string &filepath, config_camera_calibra
     cfg.charuco_params_marker_border_pixel = doc["charuco_params_marker_border_pixel"].GetInt();
     cfg.charuco_params_marker_to_square_ratio = doc["charuco_params_marker_to_square_ratio"].GetFloat();
     cfg.charuco_params_square_size = doc["charuco_params_square_size"].GetFloat();
-    cfg.input_dir = doc["input_dir"].GetString();
     cfg.savedir = doc["savedir"].GetString();
 
     return true;

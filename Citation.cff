@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "multi-camera-calib"
+version: 1.0.0
+doi: 10.5281/zenodo.15528299   
+date-released: 2025-05-27
+license: CC0-1.0 
+url: https://github.com/HenrikTrom/multi-camera-calib
+repository-code: https://github.com/HenrikTrom/multi-camera-calib
+abstract: "**Package for calibrating synchronized multi-camera setups, designed for robotic platforms. It captures calibration data, runs ChArUco-based calibration, and validates the results with 3D backprojection."
+authors:
+  - family-names: Trommer
+    given-names: Henrik
+    orcid: https://orcid.org/0009-0002-3110-0963
+    affiliation: University of Göttingen
+keywords:
+  - multi-view-camera-calibration
+  - calibration
+  - triangulation
+  - multi-view
+  - c++
+  - research software
+  - open source

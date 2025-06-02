@@ -2,9 +2,6 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
-    "pattern_type": {
-      "type": "integer"
-    },
     "pattern_size_first": {
       "type": "integer"
     },
@@ -34,7 +31,6 @@
     }
   },
   "required": [
-    "pattern_type",
     "pattern_size_first",
     "pattern_size_second",
     "charuco_params_border_size",
@@ -42,7 +38,6 @@
     "charuco_params_marker_border_pixel",
     "charuco_params_marker_to_square_ratio",
     "charuco_params_square_size",
-    "input_dir",
     "savedir"
   ],
   "additionalProperties": false

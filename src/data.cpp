@@ -5,8 +5,6 @@ using namespace cv;
 
 Calibration::Data::Data(config_camera_calibration &cfg)
 {
-
-    this->pattern_type = cfg.pattern_type;
     this->pattern_size.first = cfg.pattern_size_first;
     this->pattern_size.second = cfg.pattern_size_second;
     this->charuco_params.border_size = cfg.charuco_params_border_size;

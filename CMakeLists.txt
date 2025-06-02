@@ -5,6 +5,9 @@ find_package(cpp_utils REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
+
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Instruct CMake to run moc automatically when needed.
@@ -16,11 +19,8 @@ set(CMAKE_AUTOUIC ON)
 # BEGIN: const header cam serial numbers
 ##################################################################################
 set(CONFIG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cfg)
-set(MASTER_LINE $ENV{FLIR_MASTER_LINE})
-set(SLAVE_LINE $ENV{FLIR_SLAVE_LINE})
 set(FLIR_CAMERA_SERIAL_NUMBERS $ENV{FLIR_CAMERA_SERIAL_NUMBERS})
 set(FLIR_CAMERA_COUNT $ENV{FLIR_CAMERA_COUNT})
-set(FLIR_MASTER_CAM_SERIAL $ENV{FLIR_MASTER_CAM_SERIAL})
 set(FLIR_TOP_CAM_SERIAL $ENV{FLIR_TOP_CAM_SERIAL})
 string(REPLACE "," ";" SERIAL_NUMBERS ${FLIR_CAMERA_SERIAL_NUMBERS})
 
@@ -47,9 +47,9 @@ file(APPEND ${GENERATED_HEADER} "constexpr std::string_view GLOBAL_CONST_TOP_CAM
 
 
 set(SOURCES 
-src/data.cpp 
-src/load_pattern.h
-src/config_parser.cpp
+  src/data.cpp 
+  src/load_pattern.h
+  src/config_parser.cpp
 )
 
 # This will create you executable

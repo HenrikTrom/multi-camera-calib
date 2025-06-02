@@ -1645,6 +1645,8 @@ bool save_cameras(
     ofs << buffer.GetString();
     ofs.close();
 
+    spdlog::info("Saved Calibration result to {}", filename);
+
     return true;
 };
 

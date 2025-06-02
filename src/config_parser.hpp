@@ -3,7 +3,6 @@
 
 struct config_camera_calibration
 {
-    int pattern_type;
     int pattern_size_first;
     int pattern_size_second;
     float charuco_params_border_size;
