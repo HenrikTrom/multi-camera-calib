@@ -16,7 +16,7 @@ If you use this software in your work, please cite it using the **“Cite this r
 
 ### Dependencies
 
-This package forms an essential part for my [docker-based real-time 3d tracker](TODO-Path). It mainly depends on these two modules
+This package forms an essential part for my [docker-based real-time 3d tracker](https://github.com/HenrikTrom/ROSTrack-RT-3D). It mainly depends on these two modules
 
 * [cpp_utils](https://github.com/HenrikTrom/cpp_utils)
 

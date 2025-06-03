@@ -6,5 +6,5 @@
     "charuco_params_marker_border_pixel": 1,
     "charuco_params_marker_to_square_ratio": 0.75,
     "charuco_params_square_size": 80.0,
-    "savedir": "/home/docker/workspace/workspace/multi-camera-calib/data/results"
+    "savedir": "/home/henrik/Documents/ROSTrack-RT-3D/workspace/src/real-time-3D-tracking/cfg"
 }
