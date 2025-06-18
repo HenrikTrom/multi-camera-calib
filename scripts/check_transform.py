@@ -67,6 +67,8 @@ def detect_patterns(imgs: dict, settings: dict, script_dir: str):
     img_corners, img_ids = [], []
     for sn, img in imgs.items():
         corners, ids, marker_corners, marker_ids = detector.detectBoard(img)
+        
+        print(f"Found board corners: {len(ids)}")
         cv2.aruco.drawDetectedCornersCharuco(img, corners)
         cv2.aruco.drawDetectedMarkers(img, marker_corners, marker_ids)
         np.squeeze(marker_ids)
@@ -132,6 +134,7 @@ def main():
     script_path = os.path.abspath(__file__)
     script_dir = os.path.dirname(script_path)
     settings_path = f"{script_dir}/../cfg/CameraCalibrationSettings.json"
+    print(f"Loading {settings_path}")
     with open(settings_path) as json_file:
         settings = json.load(json_file)
     cam_settings_file = f"{script_dir}/../cfg/record_video_Settings{W}x{H}.json"
