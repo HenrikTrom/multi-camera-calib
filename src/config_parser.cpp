@@ -19,6 +19,11 @@ bool load_config_camera_calibration(std::string &filepath, config_camera_calibra
     cfg.charuco_params_marker_to_square_ratio = doc["charuco_params_marker_to_square_ratio"].GetFloat();
     cfg.charuco_params_square_size = doc["charuco_params_square_size"].GetFloat();
     cfg.savedir = doc["savedir"].GetString();
+    cfg.main_cam_serial = doc["main_cam_serial"].GetString();
+
+    for (const auto &sn : doc["serial_numbers"].GetArray()) {
+        cfg.SNs.push_back(sn.GetString());
+    }
 
     return true;
 }

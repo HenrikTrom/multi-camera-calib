@@ -9,13 +9,6 @@ import sys
 # Stolen from anipose in trinagulation.py
 # @jit(nopython=True, parallel=True)
 def triangulate_simple_dlt(points, camera_mats):
-    """triangulates from N-Cams with DLT
-    Args:
-        points (list of (x,y)): 
-        camera_mats (list of projection matices): 
-    Returns:
-        np.array: 3d point
-    """
     num_cams = len(camera_mats)
     A = np.zeros((num_cams * 2, 4))
     for i in range(num_cams):
@@ -34,7 +27,11 @@ def get_images(cam_settings_file) -> dict:
     imgs_ = fcam.get_images()
     imgs = [img.copy() for img in imgs_]
     fcam.stop()
-    return {sn: img for sn, img in zip(os.environ['FLIR_CAMERA_SERIAL_NUMBERS'].split(","), imgs)}
+    
+    with open(cam_settings_file) as json_file:
+        config = json.load(json_file)
+    sns = [cam["serial"] for cam in config["cams"]]
+    return {sn: img for sn, img in zip(sns, imgs)}, config
     
 def load_calibration(filepath):
     with open(filepath) as json_file:
@@ -95,7 +92,7 @@ def detect_patterns(imgs: dict, settings: dict, script_dir: str):
              
     return corner_list
 
-def back_project_0(imgs, corner_list, cam_data, script_dir):
+def back_project_0(imgs, main_cam_serial, corner_list, cam_data, script_dir):
     marker_colors = [
         (0, 255, 0),
         (255, 0, 0),
@@ -104,10 +101,9 @@ def back_project_0(imgs, corner_list, cam_data, script_dir):
     markerType = cv2.MARKER_CROSS
     markerSize = 20
     thickness = 1
-    top_cam_sn = os.environ['FLIR_TOP_CAM_SERIAL']
-    top_cam_idx = list(imgs.keys()).index(top_cam_sn)
-    intrinsic_top_cam = cam_data[top_cam_sn]["Intrinsic"]
-    top_cam_img = imgs[top_cam_sn]
+    top_cam_idx = list(imgs.keys()).index(main_cam_serial)
+    intrinsic_top_cam = cam_data[main_cam_serial]["Intrinsic"]
+    top_cam_img = imgs[main_cam_serial]
     
     camera_mats = [
         data["Intrinsic"] @ data["Extrinsic"][:3, :] for _, data in cam_data.items()
@@ -138,7 +134,7 @@ def main():
     with open(settings_path) as json_file:
         settings = json.load(json_file)
     cam_settings_file = f"{script_dir}/../cfg/record_video_Settings{W}x{H}.json"
-    imgs = get_images(cam_settings_file)
+    imgs, cfg = get_images(cam_settings_file)
     print("Got images")
     corner_list = detect_patterns(imgs, settings, script_dir)
     print("Detected pattern")
@@ -147,7 +143,8 @@ def main():
         f"{savedir}/Calibration{W}x{H}.json"
     )
     print("Got calibration")
-    back_project_0(imgs, corner_list, cam_data, script_dir)
+    print(cfg.keys())
+    back_project_0(imgs, settings["main_cam_serial"],corner_list, cam_data, script_dir)
     
 if __name__ == "__main__":
     main()

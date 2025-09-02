@@ -119,7 +119,10 @@ bool readFloatImage(const string file_path, Mat* image){
     return true;
 }
 
-bool createImageList(const string& dir_path, const map<int,pairf>& rig_positions, Files* files, Detection* detection, vector<Camera>* cameras){
+bool createImageList(
+    const string& dir_path, const map<int,pairf>& rig_positions, Files* files,
+    Detection* detection, vector<Camera>* cameras, const config_camera_calibration &cfg
+) {
     if(files == nullptr || detection == nullptr){
         spdlog::error("No file list or detection struct given.");
         return false;
@@ -140,21 +143,19 @@ bool createImageList(const string& dir_path, const map<int,pairf>& rig_positions
 
     // get number of frames and fill with values according to hardware constants
     std::vector<std::string> file_list;
-    int count = 0;
+    std::size_t count = 0;
     for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
         if (entry.is_regular_file() && entry.path().extension() == ".png") {
             count += 1;
         }
     }
-    std::size_t n_frames = count/5;
+    std::size_t n_frames = count/cfg.SNs.size();
     // first entry is reference-frame camera -> use top cam 
-    std::vector<std::string> sns{
-        std::string(GLOBAL_CONST_TOP_CAM_SERIAL)
-    };
-    for (auto sn : GLOBAL_CONST_CAMERA_SERIAL_NUMBERS)
+    std::vector<std::string> sns{cfg.main_cam_serial};
+    for (auto sn : cfg.SNs)
     {
-        if (sn != GLOBAL_CONST_TOP_CAM_SERIAL)
-        sns.push_back(std::string(sn));
+        if (sn != cfg.main_cam_serial)
+        sns.push_back(sn);
     }
     for (auto sn : sns)
     {
@@ -628,7 +629,7 @@ bool intrinsicsEstimation(const Detection& detection, Estimation* estimation, co
 }
 
 
-void detectPatterns(Data* data_)
+void detectPatterns(Data* data_, const config_camera_calibration &cfg)
 {
     //check if image input dir is set
     if(data_->input_dir.size() == 0){
@@ -644,7 +645,7 @@ void detectPatterns(Data* data_)
 
     //create image list and initial cameras
     std::vector<Camera> cameras;   
-    if(!createImageList(data_->input_dir, rig_positions, &data_->files, &data_->detection, &cameras)){
+    if(!createImageList(data_->input_dir, rig_positions, &data_->files, &data_->detection, &cameras, cfg)){
         spdlog::error("Image list creation failed.");
         return;
     }
@@ -664,12 +665,12 @@ void detectPatterns(Data* data_)
 }
 
 
-bool calculateIntrinsics(Data *data_)
+bool calculateIntrinsics(Data *data_, const config_camera_calibration &cfg)
 {
     spdlog::info("Start intrinsics estimation. Please wait..");
     data_->estimation.clearGeometry();
 
-    detectPatterns(data_);
+    detectPatterns(data_, cfg);
 
     if(data_->detection.correspondences.size() == 0){
         spdlog::error("No correspondences available - either load them from a file or detect the patterns in the input images.");
@@ -1578,7 +1579,8 @@ bool optimizeExtrinsics(
 };
 
 bool save_cameras(
-    std::string filename, Estimation* estimation
+    std::string filename, Estimation* estimation, 
+    const config_camera_calibration &cfg
 ){
     Document doc;
     doc.SetObject();
@@ -1589,6 +1591,11 @@ bool save_cameras(
     timestamp_val.SetString(ts.c_str(), static_cast<rapidjson::SizeType>(ts.length()), allocator);
     doc.AddMember("timestamp", timestamp_val, allocator);
 
+    rapidjson::Value main_cam_serial_val;
+    main_cam_serial_val.SetString(
+        cfg.main_cam_serial.c_str(), static_cast<rapidjson::SizeType>(cfg.main_cam_serial.length()), allocator);
+    doc.AddMember("main_cam_serial", main_cam_serial_val, allocator);
+// "main_cam_serial": "19037266",
     Value cameras(kArrayType);
     for (size_t i = 0; i < estimation->cams.size(); i++) {
         Value camera(kObjectType);
@@ -1650,8 +1657,8 @@ bool save_cameras(
     return true;
 };
 
-void calibrate(Data *data_){
-    calculateIntrinsics(data_);
+void calibrate(Data *data_, const config_camera_calibration &cfg){
+    calculateIntrinsics(data_, cfg);
 
     //start optimization
     if(!optimizeExtrinsics(data_->detection, &data_->estimation, data_->lm_params, data_->opt_params)){
@@ -1663,7 +1670,7 @@ void calibrate(Data *data_){
     
     save_cameras(
         data_->savedir + "/Calibration" + extension,
-        &data_->estimation
+        &data_->estimation, cfg
     );
 }
 

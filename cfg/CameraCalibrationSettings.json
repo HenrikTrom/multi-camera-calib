@@ -6,5 +6,13 @@
     "charuco_params_marker_border_pixel": 1,
     "charuco_params_marker_to_square_ratio": 0.75,
     "charuco_params_square_size": 80.0,
+    "serial_numbers": [
+        "19037266",
+        "19246521",
+        "20174578",
+        "19338645",
+        "19421325"
+    ],
+    "main_cam_serial": "19037266",
     "savedir": "/home/docker/workspace/workspace/src/flir_icp_calib/cfg"
 }

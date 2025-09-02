@@ -34,6 +34,8 @@ To build the package, simply run:
 
 Use a ChArUco board similar to the one shown in the example image above.
 
+To get you started we provide a bitmap file in `./content/board_pattern.MCC_Patt1040x720.bmp`. You can use [GIMP](https://www.gimp.org/) to rescale and print the file with a size of 1040 x 720 mm, including the white border. The configuration bellow matches this exact calibration target.
+
 ### 2. Configure Calibration Settings
 
 Edit the configuration file `./cfg/CameraCalibrationSettings.json` to match your setup:

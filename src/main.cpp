@@ -9,7 +9,7 @@ int main(int argc, char* argv){
     cfg.input_dir = std::string(CONFIG_DIR)+"/../data/images";
     load_config_camera_calibration(filepath, cfg);
     Data data_(cfg);
-    calibrate(&data_);
+    calibrate(&data_, cfg);
 
     
     return 0;
