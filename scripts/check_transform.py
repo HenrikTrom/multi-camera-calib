@@ -122,6 +122,7 @@ def back_project_0(imgs, main_cam_serial, corner_list, cam_data, script_dir):
         error += abs(np.linalg.norm(bp-np.array(detection[top_cam_idx])))
 
     cv2.imwrite(f"{script_dir}/../test/back_projeced3d.jpg", top_cam_img)
+    print(f"Result: {script_dir}/../test/back_projeced3d.jpg")
     print(f"Mean back-projection error: {error/len(corner_list)} pixels")
      
 def main():
@@ -143,7 +144,6 @@ def main():
         f"{savedir}/Calibration{W}x{H}.json"
     )
     print("Got calibration")
-    print(cfg.keys())
     back_project_0(imgs, settings["main_cam_serial"],corner_list, cam_data, script_dir)
     
 if __name__ == "__main__":
