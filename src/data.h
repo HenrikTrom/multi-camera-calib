@@ -36,7 +36,7 @@ const int PARAM_PATTERN_HEIGHT = 1;
 const int PARAM_CHARUCO_SQUARE_SIZE = 2;
 const int PARAM_CHARUCO_BORDER_PIXEL = 3;
 const int PARAM_LM_CHANGE_THRESHOLD = 4;
-const int PARAM_LM_MAX_ITERATIONS = 5;
+const int PARAM_LM_MAX_ITERATIONS = 10;
 const int PARAM_IMAGE_INPUT_DIR = 6;
 
 //parameter container codes
@@ -272,9 +272,9 @@ struct LM_Params{
     ///termination criterium for Levenberg Marquardt optimization
     int term_criterium = LM_TERM_COMBINED;
     ///threshold for change termination
-    double change_threshold = 0.001;
+    double change_threshold = 0.0001;
     ///maximum number of iterations for the Levenberg Marquardt optimization
-    int max_iterations = 5;
+    int max_iterations = 50;
 };
 
 ///

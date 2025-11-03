@@ -5,6 +5,9 @@ find_package(cpp_utils REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 
+set(OPTIMIZATION_FLAGS "-DNDEBUG -O2 -Wno-deprecated-declarations")
+set(CMAKE_CXX_FLAGS "-DNDEBUG -O2 -Wno-deprecated-declarations -flto")
+
 set(CMAKE_BUILD_TYPE Release)
 # set(CMAKE_BUILD_TYPE Debug)
 
