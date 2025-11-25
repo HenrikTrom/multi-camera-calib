@@ -51,12 +51,12 @@ def load_calibration(filepath):
     print(f"Loaded {filepath}")
     return cam_data
 
-def detect_patterns(imgs: dict, settings: dict, script_dir: str):
-    chdict = cv2.aruco.getPredefinedDictionary(settings["charuco_params_dict"])
+def detect_patterns(imgs: dict, calib_settings: dict, script_dir: str):
+    chdict = cv2.aruco.getPredefinedDictionary(calib_settings["charuco_params_dict"])
     board = cv2.aruco.CharucoBoard(
-        (settings["pattern_size_first"], settings["pattern_size_second"]),
-        settings["charuco_params_square_size"], 
-        settings["charuco_params_square_size"]*settings["charuco_params_marker_to_square_ratio"],
+        (calib_settings["pattern_size_first"], calib_settings["pattern_size_second"]),
+        calib_settings["charuco_params_square_size"], 
+        calib_settings["charuco_params_square_size"]*calib_settings["charuco_params_marker_to_square_ratio"],
         chdict
     )
     detector = cv2.aruco.CharucoDetector(board)
@@ -76,23 +76,24 @@ def detect_patterns(imgs: dict, settings: dict, script_dir: str):
         print(f"Saved {fp}")
 
     ids_intersection = list(set(img_ids[0]).intersection(*map(set, img_ids[1:])))
-    
     # corner for each view
-    corner_list = []
+    # corner_list = []
+    corner_list = [[] for _ in range(len(imgs))]
     for rid in ids_intersection:
-        corner_list_tmp = [[], [], [], []]
-        for idx, sn in enumerate(imgs.items()):
+        # corners for each corner from each camera-perspective
+        for idx, (sn, img) in enumerate(imgs.items()):
             for id, mcorners in zip(img_ids[idx], img_corners[idx]):
                 if id == rid:
                     for j in range(4):
-                        corner_list_tmp[j].append((mcorners[0, j, 0], mcorners[0, j, 1]))
-
-        for j in range(4):   
-            corner_list.append(corner_list_tmp[j])
+                        corner_list[idx].append(
+                            (mcorners[0, j, 0], mcorners[0, j, 1]) # xy
+                        ) 
+                    break
              
-    return corner_list
+    return np.transpose(corner_list, axes=(1, 0, 2))
 
-def back_project_0(imgs, main_cam_serial, corner_list, cam_data, script_dir):
+
+def back_project_0(imgs, main_cam_serial, corner_list, cam_data: dict, script_dir: str):
     marker_colors = [
         (0, 255, 0),
         (255, 0, 0),
@@ -105,14 +106,21 @@ def back_project_0(imgs, main_cam_serial, corner_list, cam_data, script_dir):
     intrinsic_top_cam = cam_data[main_cam_serial]["Intrinsic"]
     top_cam_img = imgs[main_cam_serial]
     
-    camera_mats = [
-        data["Intrinsic"] @ data["Extrinsic"][:3, :] for _, data in cam_data.items()
-    ]
+    # assuere same ordering
+    camera_mats = []
+    for sn, _ in imgs.items():
+        camera_mats.append(
+            cam_data[sn]["Intrinsic"] @ cam_data[sn]["Extrinsic"][:3, :]
+        )
+
+
     
     intrinsic_top_inv = np.linalg.inv(intrinsic_top_cam)
     error = 0
     for detection in corner_list:
+        # print(detection)
         point3d = triangulate_simple_dlt(detection, camera_mats)
+        # print(point3d)
         bp = intrinsic_top_cam @ point3d
         bp = bp[:2]/bp[2]
         cv2.drawMarker(
@@ -130,21 +138,21 @@ def main():
     H = sys.argv[2]
     script_path = os.path.abspath(__file__)
     script_dir = os.path.dirname(script_path)
-    settings_path = f"{script_dir}/../cfg/CameraCalibrationSettings.json"
-    print(f"Loading {settings_path}")
-    with open(settings_path) as json_file:
-        settings = json.load(json_file)
+    calib_settings_path = f"{script_dir}/../cfg/CameraCalibrationSettings.json"
+    print(f"Loading {calib_settings_path}")
+    with open(calib_settings_path) as json_file:
+        calib_settings = json.load(json_file)
     cam_settings_file = f"{script_dir}/../cfg/record_video_Settings{W}x{H}.json"
     imgs, cfg = get_images(cam_settings_file)
     print("Got images")
-    corner_list = detect_patterns(imgs, settings, script_dir)
+    corner_list = detect_patterns(imgs, calib_settings, script_dir)
     print("Detected pattern")
-    savedir = settings["savedir"]
+    savedir = calib_settings["savedir"]
     cam_data = load_calibration(
         f"{savedir}/Calibration{W}x{H}.json"
     )
     print("Got calibration")
-    back_project_0(imgs, settings["main_cam_serial"],corner_list, cam_data, script_dir)
+    back_project_0(imgs, calib_settings["main_cam_serial"],corner_list, cam_data, script_dir)
     
 if __name__ == "__main__":
     main()
